@@ -25,6 +25,8 @@ interface Preferences {
   githubUsers: string;
   enterpriseOrgs: string;
   enterpriseHost: string;
+  enterpriseHttpProxy: string;
+  enterpriseHttpsProxy: string;
 }
 
 interface GhRepo {
@@ -38,6 +40,7 @@ interface GhRepo {
 const cache = new Cache();
 const CACHE_KEY = "repos";
 
+// Strips `woocommerce-` / `-woocommerce-` / `-woocommerce` from repo names so the list reads less noisily when most repos share that prefix.
 function stripWoo(name: string): string {
   const stripped = name
     .replace(/^woocommerce-/i, "")
@@ -45,13 +48,13 @@ function stripWoo(name: string): string {
     .replace(/-woocommerce$/i, "");
   return stripped || name;
 }
-const GH = "/opt/homebrew/bin/gh";
-const EXEC_ENV = {
-  ...process.env,
-  PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH}`,
-  HTTPS_PROXY: "socks5://127.0.0.1:8080",
-  HTTP_PROXY: "socks5://127.0.0.1:8080",
-};
+const GH = "gh";
+const EXEC_ENV = process.env;
+const USER_SHELL = process.env.SHELL || "/bin/zsh";
+
+function shellQuote(arg: string): string {
+  return `'${arg.replace(/'/g, `'\\''`)}'`;
+}
 
 function parseOrgs(value: string): string[] {
   return value
@@ -67,16 +70,26 @@ async function fetchOrg(
   sectionTitle: string,
   key: string,
   hostname?: string,
+  proxy?: { http: string; https: string },
   onDone?: Progress,
 ): Promise<OrgRepos> {
-  const env = hostname ? { ...EXEC_ENV, GH_HOST: hostname } : EXEC_ENV;
-  const command = `${GH} repo list ${org} --limit 1000 --json name,url,description,isArchived,visibility`;
+  const envAssignments: string[] = [];
+  if (hostname) {
+    envAssignments.push(`GH_HOST=${shellQuote(hostname)}`);
+    const httpProxy = proxy?.http || proxy?.https || "";
+    const httpsProxy = proxy?.https || proxy?.http || "";
+    if (httpProxy) envAssignments.push(`HTTP_PROXY=${shellQuote(httpProxy)}`);
+    if (httpsProxy) envAssignments.push(`HTTPS_PROXY=${shellQuote(httpsProxy)}`);
+  }
+  const prefix = envAssignments.length > 0 ? `${envAssignments.join(" ")} ` : "";
+  const inner = `${prefix}${GH} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
+  const command = `${USER_SHELL} -lc ${shellQuote(inner)}`;
   try {
     console.log(`[git-jump] Fetching ${org}${hostname ? ` on ${hostname}` : ""}...`);
     const { stdout } = await execAsync(command, {
       encoding: "utf-8",
       timeout: 30000,
-      env,
+      env: EXEC_ENV,
       maxBuffer: 20 * 1024 * 1024,
     });
     const raw: GhRepo[] = JSON.parse(stdout);
@@ -102,9 +115,19 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
   const githubUsers = parseOrgs(prefs.githubUsers || "");
   const enterpriseOrgs = parseOrgs(prefs.enterpriseOrgs || "");
   const enterpriseHost = (prefs.enterpriseHost || "").trim();
+  const enterpriseProxy = {
+    http: (prefs.enterpriseHttpProxy || "").trim(),
+    https: (prefs.enterpriseHttpsProxy || "").trim(),
+  };
 
   const enterpriseEnabled = enterpriseHost.length > 0 && enterpriseOrgs.length > 0;
-  const specs: { org: string; sectionTitle: string; key: string; hostname?: string }[] = [
+  const specs: {
+    org: string;
+    sectionTitle: string;
+    key: string;
+    hostname?: string;
+    proxy?: { http: string; https: string };
+  }[] = [
     ...githubOrgs.map((o) => ({ org: o, sectionTitle: o, key: `github.com:${o}` })),
     ...githubUsers.map((u) => ({ org: u, sectionTitle: u, key: `github.com:${u}` })),
     ...(enterpriseEnabled
@@ -113,11 +136,20 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
           sectionTitle: `${o} (Enterprise)`,
           key: `${enterpriseHost}:${o}`,
           hostname: enterpriseHost,
+          proxy: enterpriseProxy,
         }))
       : []),
   ];
 
-  const total = specs.length;
+  const seen = new Set<string>();
+  const dedupedSpecs = specs.filter((s) => {
+    const dedupeKey = s.key.toLowerCase();
+    if (seen.has(dedupeKey)) return false;
+    seen.add(dedupeKey);
+    return true;
+  });
+
+  const total = dedupedSpecs.length;
   let done = 0;
   const cb: Progress = (org) => {
     done++;
@@ -125,7 +157,9 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
   };
 
   const results = await Promise.all(
-    specs.map(({ org, sectionTitle, key, hostname }) => fetchOrg(org, sectionTitle, key, hostname, cb)),
+    dedupedSpecs.map(({ org, sectionTitle, key, hostname, proxy }) =>
+      fetchOrg(org, sectionTitle, key, hostname, proxy, cb),
+    ),
   );
   return results.sort((a, b) => b.repos.length - a.repos.length);
 }

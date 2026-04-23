@@ -48,6 +48,22 @@
       "title": "Enterprise Host",
       "description": "GitHub Enterprise hostname",
       "default": ""
+    },
+    {
+      "name": "enterpriseHttpProxy",
+      "type": "textfield",
+      "required": false,
+      "title": "Enterprise HTTP Proxy",
+      "description": "Optional HTTP_PROXY used when fetching from the Enterprise host",
+      "default": "socks5://127.0.0.1:8080"
+    },
+    {
+      "name": "enterpriseHttpsProxy",
+      "type": "textfield",
+      "required": false,
+      "title": "Enterprise HTTPS Proxy",
+      "description": "Optional HTTPS_PROXY used when fetching from the Enterprise host",
+      "default": "socks5://127.0.0.1:8080"
     }
   ],
   "dependencies": {
