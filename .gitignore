@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Raycast
+raycast-env.d.ts
+.raycast/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Env
+.env
+.env.local
