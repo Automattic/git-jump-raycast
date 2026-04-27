@@ -1,4 +1,14 @@
-import { ActionPanel, Action, List, Cache, Icon, showToast, Toast, getPreferenceValues } from "@raycast/api";
+import {
+  ActionPanel,
+  Action,
+  List,
+  Cache,
+  Icon,
+  showToast,
+  Toast,
+  getPreferenceValues,
+  LocalStorage,
+} from "@raycast/api";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { useEffect, useState } from "react";
@@ -39,6 +49,7 @@ interface GhRepo {
 
 const cache = new Cache();
 const CACHE_KEY = "repos";
+const FAVORITES_KEY = "favorites";
 
 // Strips `woocommerce-` / `-woocommerce-` / `-woocommerce` from repo names so the list reads less noisily when most repos share that prefix.
 function stripWoo(name: string): string {
@@ -167,6 +178,32 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
 export default function Command() {
   const [orgRepos, setOrgRepos] = useState<OrgRepos[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  async function loadFavorites() {
+    const raw = await LocalStorage.getItem<string>(FAVORITES_KEY);
+    if (raw) {
+      try {
+        const arr: string[] = JSON.parse(raw);
+        setFavorites(new Set(arr));
+      } catch {
+        setFavorites(new Set());
+      }
+    }
+  }
+
+  async function toggleFavorite(url: string) {
+    const next = new Set(favorites);
+    if (next.has(url)) {
+      next.delete(url);
+      showToast({ style: Toast.Style.Success, title: "Removed from favorites" });
+    } else {
+      next.add(url);
+      showToast({ style: Toast.Style.Success, title: "Added to favorites" });
+    }
+    setFavorites(next);
+    await LocalStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(next)));
+  }
 
   async function loadRepos(useCache: boolean) {
     setIsLoading(true);
@@ -215,7 +252,47 @@ export default function Command() {
 
   useEffect(() => {
     loadRepos(true);
+    loadFavorites();
   }, []);
+
+  const favoriteRepos: { repo: Repo; orgKey: string; sectionTitle: string }[] = [];
+  for (const org of orgRepos) {
+    for (const repo of org.repos) {
+      if (favorites.has(repo.url)) {
+        favoriteRepos.push({ repo, orgKey: org.org, sectionTitle: org.sectionTitle });
+      }
+    }
+  }
+  favoriteRepos.sort((a, b) => a.repo.name.localeCompare(b.repo.name));
+
+  function renderItem(repo: Repo, orgKey: string, keyPrefix: string) {
+    const isFav = favorites.has(repo.url);
+    const accessories: List.Item.Accessory[] = [];
+    if (isFav) accessories.push({ icon: Icon.Star, tooltip: "Favorite" });
+    accessories.push({ text: repo.visibility });
+    return (
+      <List.Item
+        key={`${keyPrefix}:${orgKey}/${repo.name}`}
+        title={stripWoo(repo.name)}
+        subtitle={repo.description}
+        keywords={[...repo.name.split("-"), orgKey]}
+        accessories={accessories}
+        actions={
+          <ActionPanel>
+            <Action.OpenInBrowser url={repo.url} />
+            <Action
+              title={isFav ? "Remove from Favorites" : "Add to Favorites"}
+              icon={isFav ? Icon.StarDisabled : Icon.Star}
+              shortcut={{ modifiers: ["cmd"], key: "f" }}
+              onAction={() => toggleFavorite(repo.url)}
+            />
+            <Action title="Refresh Repositories" icon={Icon.ArrowClockwise} onAction={refresh} />
+            <Action.CopyToClipboard title="Copy URL" content={repo.url} />
+          </ActionPanel>
+        }
+      />
+    );
+  }
 
   return (
     <List
@@ -227,26 +304,20 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      {orgRepos.map((org) => (
-        <List.Section key={org.org} title={org.sectionTitle} subtitle={`${org.repos.length} repos`}>
-          {org.repos.map((repo) => (
-            <List.Item
-              key={`${org.org}/${repo.name}`}
-              title={stripWoo(repo.name)}
-              subtitle={repo.description}
-              keywords={[...repo.name.split("-"), org.org]}
-              accessories={[{ text: repo.visibility }]}
-              actions={
-                <ActionPanel>
-                  <Action.OpenInBrowser url={repo.url} />
-                  <Action title="Refresh Repositories" icon={Icon.ArrowClockwise} onAction={refresh} />
-                  <Action.CopyToClipboard title="Copy URL" content={repo.url} />
-                </ActionPanel>
-              }
-            />
-          ))}
+      {favoriteRepos.length > 0 && (
+        <List.Section title="Favorites" subtitle={`${favoriteRepos.length}`}>
+          {favoriteRepos.map(({ repo, orgKey }) => renderItem(repo, orgKey, "fav"))}
         </List.Section>
-      ))}
+      )}
+      {orgRepos.map((org) => {
+        const nonFav = org.repos.filter((r) => !favorites.has(r.url));
+        if (nonFav.length === 0) return null;
+        return (
+          <List.Section key={org.org} title={org.sectionTitle} subtitle={`${nonFav.length} repos`}>
+            {nonFav.map((repo) => renderItem(repo, org.org, "main"))}
+          </List.Section>
+        );
+      })}
     </List>
   );
 }
