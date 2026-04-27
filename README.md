@@ -36,18 +36,11 @@ You can reproduce exactly what the extension sees by running the command above i
 
 ## Install
 
-```bash
-git clone git@github.com:Automattic/git-jump-raycast.git
-cd git-jump-raycast
-npm install
-npm run build
-```
-
-Then in Raycast:
-
+1. Clone the repo with `git clone git@github.com:Automattic/git-jump-raycast.git`
 1. Open Raycast (`⌘ Space`)
-2. Search **Import Extension**
-3. Select the `git-jump-raycast` folder
+1. Search **Import Extension**
+1. Select the `git-jump-raycast` folder
+1. In your terminal, go to the `git-jump-raycast` folder and run `npm install && npm run build`
 
 The command will be available as **Git Jump** (search "git", "gh", "repo", or "jump").
 
