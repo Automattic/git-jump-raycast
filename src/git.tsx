@@ -283,7 +283,7 @@ export default function Command() {
             <Action
               title={isFav ? "Remove from Favorites" : "Add to Favorites"}
               icon={isFav ? Icon.StarDisabled : Icon.Star}
-              shortcut={{ modifiers: ["cmd"], key: "f" }}
+              shortcut={{ modifiers: ["cmd"], key: "d" }}
               onAction={() => toggleFavorite(repo.url)}
             />
             <Action title="Refresh Repositories" icon={Icon.ArrowClockwise} onAction={refresh} />

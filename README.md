@@ -69,13 +69,13 @@ All fields accept multiple values separated by commas, e.g. `woocommerce, Automa
 - `↵` opens the repo in the browser
 - `⌘ K` → **Refresh Repositories** re-fetches from `gh` and updates the cache
 - `⌘ .` → **Copy URL** copies the repo URL to the clipboard
-- `⌘ F` → **Add to Favorites** / **Remove from Favorites** toggles the selected repo
+- `⌘ D` → **Add to Favorites** / **Remove from Favorites** toggles the selected repo
 
 Results are cached on disk. Refresh only when you expect new repos.
 
 ### Favorites
 
-Press `⌘ F` on any repo to add it to a pinned **Favorites** section that appears at the top of the list. Favorited repos are removed from their original org section so they only show up once. Press `⌘ F` again on a favorite to remove it. Favorites persist across Raycast restarts via Raycast's local storage.
+Press `⌘ D` on any repo to add it to a pinned **Favorites** section that appears at the top of the list. Favorited repos are removed from their original org section so they only show up once. Press `⌘ D` again on a favorite to remove it. Favorites persist across Raycast restarts via Raycast's local storage.
 
 ### Display tweaks
 
