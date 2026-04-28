@@ -21,7 +21,7 @@
       "name": "githubOrgs",
       "type": "textfield",
       "required": false,
-      "title": "GitHub Orgs (comma separated)",
+      "title": "github.com Orgs (comma separated)",
       "description": "Organizations on github.com to fetch repos from (e.g. \"woocommerce, Automattic\").",
       "default": "woocommerce, Automattic"
     },
