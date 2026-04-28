@@ -44,13 +44,25 @@ You can reproduce exactly what the extension sees by running the command above i
 
 The command will be available as **Git Jump** (search "git", "gh", "repo", or "jump").
 
+## Updating
+
+When a new version lands on `trunk`, pull it and re-run dev mode to push the latest build into Raycast:
+
+```bash
+git checkout trunk
+git pull
+npm run dev
+```
+
+`npm run dev` watches for file changes and reloads the extension in Raycast automatically. Stop it (`Ctrl-C`) when you're done — the latest build will remain installed.
+
 ## Preferences
 
 Open Raycast Settings (`⌘,`) → **Extensions** → find **Jump to a GitHub repo you have access to** → configure the fields below.
 
 | Preference | Default | Purpose |
 |---|---|---|
-| github.com Orgs | `woocommerce` | Comma-separated list of orgs on github.com |
+| github.com Orgs | `woocommerce, Automattic` | Comma-separated list of orgs on github.com |
 | github.com Users | `WordPress` | Comma-separated list of user accounts on github.com |
 | Enterprise Orgs | *(empty)* | Comma-separated list of orgs on the Enterprise host |
 | Enterprise Host | *(empty)* | Hostname of your GitHub Enterprise instance (e.g. `github.example.com`) |
