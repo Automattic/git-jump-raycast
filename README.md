@@ -105,7 +105,7 @@ Repos are cached on disk after the first fetch, so the list opens instantly on s
 2. Press `⌘ K` to open the action panel
 3. Select **Refresh Repositories**
 
-You can also trigger a refresh from any selected repo via the same action panel. The refresh re-runs `gh repo list <org>` for every configured org and user, replaces the cache, and the list updates in place.
+The refresh re-runs `gh repo list <org>` for every configured org and user, replaces the cache, and the list updates in place.
 
 ### Favorites
 
