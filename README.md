@@ -44,13 +44,39 @@ You can reproduce exactly what the extension sees by running the command above i
 
 The command will be available as **Git Jump** (search "git", "gh", "repo", or "jump").
 
+## Updating
+
+When a new version lands on `trunk`, pull and rebuild:
+
+```bash
+git checkout trunk
+git pull
+npm install
+npm run build
+```
+
+In Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
+
+### Alternative: `npm run dev`
+
+I've noticed that reloading the command doesn't always work, and `npm run dev` is more reliable.
+
+```bash
+git checkout trunk
+git pull
+npm install
+npm run dev
+```
+
+`npm run dev` watches for file changes and reloads the extension in Raycast on every save. Stop it (`Ctrl-C`) when you're done — the latest build will remain installed.
+
 ## Preferences
 
 Open Raycast Settings (`⌘,`) → **Extensions** → find **Jump to a GitHub repo you have access to** → configure the fields below.
 
 | Preference | Default | Purpose |
 |---|---|---|
-| github.com Orgs | `woocommerce` | Comma-separated list of orgs on github.com |
+| github.com Orgs | `woocommerce, Automattic` | Comma-separated list of orgs on github.com |
 | github.com Users | `WordPress` | Comma-separated list of user accounts on github.com |
 | Enterprise Orgs | *(empty)* | Comma-separated list of orgs on the Enterprise host |
 | Enterprise Host | *(empty)* | Hostname of your GitHub Enterprise instance (e.g. `github.example.com`) |
@@ -72,6 +98,16 @@ All fields accept multiple values separated by commas, e.g. `woocommerce, Automa
 - `⌘ D` → **Add to Favorites** / **Remove from Favorites** toggles the selected repo
 
 Results are cached on disk. Refresh only when you expect new repos.
+
+### Refreshing the repository list
+
+Repos are cached on disk after the first fetch, so the list opens instantly on subsequent uses. To pull the latest list of repos (e.g. when a new repo has been added to one of your configured orgs):
+
+1. Open the **Git Jump** command
+2. Press `⌘ K` to open the action panel
+3. Select **Refresh Repositories**
+
+The refresh re-runs `gh repo list <org>` for every configured org and user, replaces the cache, and the list updates in place.
 
 ### Favorites
 
