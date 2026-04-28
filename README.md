@@ -51,10 +51,11 @@ When a new version lands on `trunk`, pull and rebuild:
 ```bash
 git checkout trunk
 git pull
+npm install
 npm run build
 ```
 
-Then in Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
+`npm install` keeps `node_modules` in sync with any `package-lock.json` changes. Then in Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
 
 ### Alternative: `npm run dev`
 
@@ -63,6 +64,7 @@ If you're iterating and want changes pushed in automatically:
 ```bash
 git checkout trunk
 git pull
+npm install
 npm run dev
 ```
 
