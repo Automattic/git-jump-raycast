@@ -55,11 +55,11 @@ npm install
 npm run build
 ```
 
-`npm install` keeps `node_modules` in sync with any `package-lock.json` changes. Then in Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
+In Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
 
 ### Alternative: `npm run dev`
 
-If you're iterating and want changes pushed in automatically:
+I've noticed that reloading the command doesn't always work, and `npm run dev` is more reliable.
 
 ```bash
 git checkout trunk
