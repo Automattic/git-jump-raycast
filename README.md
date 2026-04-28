@@ -46,7 +46,19 @@ The command will be available as **Git Jump** (search "git", "gh", "repo", or "j
 
 ## Updating
 
-When a new version lands on `trunk`, pull it and re-run dev mode to push the latest build into Raycast:
+When a new version lands on `trunk`, pull and rebuild:
+
+```bash
+git checkout trunk
+git pull
+npm run build
+```
+
+Then in Raycast, open **Git Jump** and press `⌘ R` to reload the command — the new build is picked up immediately.
+
+### Alternative: `npm run dev`
+
+If you're iterating and want changes pushed in automatically:
 
 ```bash
 git checkout trunk
@@ -54,7 +66,7 @@ git pull
 npm run dev
 ```
 
-`npm run dev` watches for file changes and reloads the extension in Raycast automatically. Stop it (`Ctrl-C`) when you're done — the latest build will remain installed.
+`npm run dev` watches for file changes and reloads the extension in Raycast on every save. Stop it (`Ctrl-C`) when you're done — the latest build will remain installed.
 
 ## Preferences
 
@@ -84,6 +96,16 @@ All fields accept multiple values separated by commas, e.g. `woocommerce, Automa
 - `⌘ D` → **Add to Favorites** / **Remove from Favorites** toggles the selected repo
 
 Results are cached on disk. Refresh only when you expect new repos.
+
+### Refreshing the repository list
+
+Repos are cached on disk after the first fetch, so the list opens instantly on subsequent uses. To pull the latest list of repos (e.g. when a new repo has been added to one of your configured orgs):
+
+1. Open the **Git Jump** command
+2. Press `⌘ K` to open the action panel
+3. Select **Refresh Repositories**
+
+You can also trigger a refresh from any selected repo via the same action panel. The refresh re-runs `gh repo list <org>` for every configured org and user, replaces the cache, and the list updates in place.
 
 ### Favorites
 
