@@ -15,7 +15,7 @@ Lists repos across any number of configured GitHub organizations and users on gi
   - `gh auth login` for github.com
   - `gh auth login --hostname <enterprise-host>` for GitHub Enterprise
 
-  The extension resolves `gh` from the inherited `PATH`.
+  The extension invokes `gh` using the path configured in preferences (default: `/opt/homebrew/bin/gh`). If your `gh` is installed elsewhere (e.g. `/usr/local/bin/gh` on Intel Macs, or a custom path for nix/mise/asdf installs), update the **gh CLI Path** preference accordingly.
 - Node.js 18+ and npm
 
 ## How repositories are fetched
