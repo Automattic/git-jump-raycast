@@ -31,6 +31,7 @@ interface OrgRepos {
 }
 
 interface Preferences {
+  ghPath: string;
   githubOrgs: string;
   githubUsers: string;
   enterpriseOrgs: string;
@@ -59,7 +60,6 @@ function stripWoo(name: string): string {
     .replace(/-woocommerce$/i, "");
   return stripped || name;
 }
-const GH = "gh";
 const EXEC_ENV = process.env;
 const USER_SHELL = process.env.SHELL || "/bin/zsh";
 
@@ -80,6 +80,7 @@ async function fetchOrg(
   org: string,
   sectionTitle: string,
   key: string,
+  ghPath: string,
   hostname?: string,
   proxy?: { http: string; https: string },
   onDone?: Progress,
@@ -93,7 +94,7 @@ async function fetchOrg(
     if (httpsProxy) envAssignments.push(`HTTPS_PROXY=${shellQuote(httpsProxy)}`);
   }
   const prefix = envAssignments.length > 0 ? `${envAssignments.join(" ")} ` : "";
-  const inner = `${prefix}${GH} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
+  const inner = `${prefix}${shellQuote(ghPath)} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
   const command = `${USER_SHELL} -lc ${shellQuote(inner)}`;
   try {
     console.log(`[git-jump] Fetching ${org}${hostname ? ` on ${hostname}` : ""}...`);
@@ -122,6 +123,7 @@ async function fetchOrg(
 
 async function fetchRepos(onProgress?: (done: number, total: number, org: string) => void): Promise<OrgRepos[]> {
   const prefs = getPreferenceValues<Preferences>();
+  const ghPath = prefs.ghPath.trim();
   const githubOrgs = parseOrgs(prefs.githubOrgs || "");
   const githubUsers = parseOrgs(prefs.githubUsers || "");
   const enterpriseOrgs = parseOrgs(prefs.enterpriseOrgs || "");
@@ -169,7 +171,7 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
 
   const results = await Promise.all(
     dedupedSpecs.map(({ org, sectionTitle, key, hostname, proxy }) =>
-      fetchOrg(org, sectionTitle, key, hostname, proxy, cb),
+      fetchOrg(org, sectionTitle, key, ghPath, hostname, proxy, cb),
     ),
   );
   return results.sort((a, b) => b.repos.length - a.repos.length);
