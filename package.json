@@ -18,6 +18,14 @@
   ],
   "preferences": [
     {
+      "name": "ghPath",
+      "type": "textfield",
+      "required": false,
+      "title": "gh CLI Path",
+      "description": "Full path to the gh binary. Configure this if gh is not at the default Homebrew location (e.g. /usr/local/bin/gh on Intel Macs, or a custom path for nix/mise/asdf installs).",
+      "default": "/opt/homebrew/bin/gh"
+    },
+    {
       "name": "githubOrgs",
       "type": "textfield",
       "required": false,
