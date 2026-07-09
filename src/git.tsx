@@ -11,6 +11,8 @@ import {
 } from "@raycast/api";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { statSync, accessSync, constants } from "fs";
+import { homedir } from "os";
 import { useEffect, useState } from "react";
 
 const execAsync = promisify(exec);
@@ -67,6 +69,39 @@ function shellQuote(arg: string): string {
   return `'${arg.replace(/'/g, `'\\''`)}'`;
 }
 
+function expandHome(p: string): string {
+  if (p === "~") return homedir();
+  if (p.startsWith("~/")) return homedir() + p.slice(1);
+  return p;
+}
+
+// True only for a real, executable file — so we don't select a directory or a non-executable
+// file as `gh` and then fail the invocation when a later candidate (or PATH) would have worked.
+function isExecutableFile(p: string): boolean {
+  try {
+    if (!statSync(p).isFile()) return false;
+    accessSync(p, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Resolves the gh binary to the first candidate that exists on disk: the configured path first
+// (user override), then the standard Homebrew locations. We can't rely on `gh` being on the
+// (non-interactive) shell PATH — that's the whole reason this exists — so we probe the filesystem.
+// This keeps a wrong or stale `ghPath` preference from stranding the user.
+function getGhPath(): string {
+  const configured = getPreferenceValues<Preferences>().ghPath || "";
+  const fallbacks = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"];
+  const candidates = [
+    ...new Set([configured, ...fallbacks].map((p) => p.trim()).filter(Boolean).map(expandHome)),
+  ];
+  // Bare "gh" as the last resort so the login shell can still resolve it from PATH rather than
+  // us running a path we already know isn't a usable binary.
+  return candidates.find(isExecutableFile) ?? "gh";
+}
+
 function parseOrgs(value: string): string[] {
   return value
     .split(",")
@@ -80,7 +115,6 @@ async function fetchOrg(
   org: string,
   sectionTitle: string,
   key: string,
-  ghPath: string,
   hostname?: string,
   proxy?: { http: string; https: string },
   onDone?: Progress,
@@ -94,6 +128,7 @@ async function fetchOrg(
     if (httpsProxy) envAssignments.push(`HTTPS_PROXY=${shellQuote(httpsProxy)}`);
   }
   const prefix = envAssignments.length > 0 ? `${envAssignments.join(" ")} ` : "";
+  const ghPath = getGhPath();
   const inner = `${prefix}${shellQuote(ghPath)} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
   const command = `${USER_SHELL} -lc ${shellQuote(inner)}`;
   try {
@@ -123,7 +158,6 @@ async function fetchOrg(
 
 async function fetchRepos(onProgress?: (done: number, total: number, org: string) => void): Promise<OrgRepos[]> {
   const prefs = getPreferenceValues<Preferences>();
-  const ghPath = prefs.ghPath.trim();
   const githubOrgs = parseOrgs(prefs.githubOrgs || "");
   const githubUsers = parseOrgs(prefs.githubUsers || "");
   const enterpriseOrgs = parseOrgs(prefs.enterpriseOrgs || "");
@@ -171,7 +205,7 @@ async function fetchRepos(onProgress?: (done: number, total: number, org: string
 
   const results = await Promise.all(
     dedupedSpecs.map(({ org, sectionTitle, key, hostname, proxy }) =>
-      fetchOrg(org, sectionTitle, key, ghPath, hostname, proxy, cb),
+      fetchOrg(org, sectionTitle, key, hostname, proxy, cb),
     ),
   );
   return results.sort((a, b) => b.repos.length - a.repos.length);

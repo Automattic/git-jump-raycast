@@ -70,7 +70,7 @@
       "type": "textfield",
       "required": false,
       "title": "gh CLI Path",
-      "description": "Full path to the gh binary. Configure this if gh is not at the default Homebrew location (e.g. /usr/local/bin/gh on Intel Macs, or a custom path for nix/mise/asdf installs).",
+      "description": "Optional override for the gh binary path. Standard Homebrew locations (/opt/homebrew/bin/gh, /usr/local/bin/gh) are detected automatically, so most users can leave this as-is. Only set it if your gh lives somewhere unusual (e.g. a nix/mise/asdf install).",
       "default": "/opt/homebrew/bin/gh"
     }
   ],

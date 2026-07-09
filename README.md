@@ -6,6 +6,7 @@ Lists repos across any number of configured GitHub organizations and users on gi
 
 ## Requirements
 
+- Node.js 18+ and npm
 - [Raycast](https://raycast.com/)
 - [GitHub CLI (`gh`)](https://cli.github.com/) — **required**. The extension shells out to `gh` for every fetch. Install via Homebrew:
   ```bash
@@ -14,9 +15,6 @@ Lists repos across any number of configured GitHub organizations and users on gi
   Then authenticate:
   - `gh auth login` for github.com
   - `gh auth login --hostname <enterprise-host>` for GitHub Enterprise
-
-  The extension invokes `gh` using the path configured in preferences (default: `/opt/homebrew/bin/gh`). If your `gh` is installed elsewhere (e.g. `/usr/local/bin/gh` on Intel Macs, or a custom path for nix/mise/asdf installs), update the **gh CLI Path** preference accordingly.
-- Node.js 18+ and npm
 
 ## How repositories are fetched
 
@@ -76,6 +74,7 @@ Open Raycast Settings (`⌘,`) → **Extensions** → find **Jump to a GitHub re
 
 | Preference | Default | Purpose |
 |---|---|---|
+| gh CLI Path | `/opt/homebrew/bin/gh` | Path to the `gh` binary (see note below) |
 | github.com Orgs | `woocommerce, Automattic` | Comma-separated list of orgs on github.com |
 | github.com Users | `WordPress` | Comma-separated list of user accounts on github.com |
 | Enterprise Orgs | *(empty)* | Comma-separated list of orgs on the Enterprise host |
@@ -85,7 +84,9 @@ Open Raycast Settings (`⌘,`) → **Extensions** → find **Jump to a GitHub re
 
 Enterprise fetching only happens when both **Enterprise Host** and **Enterprise Orgs** are set. Proxy values only apply to Enterprise calls. If only one of the two proxy fields is filled in, the same value is used for both `HTTP_PROXY` and `HTTPS_PROXY`.
 
-All fields accept multiple values separated by commas, e.g. `woocommerce, Automattic, WordPress`.
+All list fields accept multiple values separated by commas, e.g. `woocommerce, Automattic, WordPress`.
+
+Most users won't need to touch **gh CLI Path**. The extension locates `gh` by probing the filesystem (it can't rely on `gh` being on the non-interactive shell `PATH`): it checks this preference first, then the standard Homebrew locations (`/opt/homebrew/bin/gh` and `/usr/local/bin/gh`), and finally bare `gh` (resolved from the login shell's `PATH`) as a last resort — using the first that's an executable binary. Only set it if your `gh` lives somewhere unusual (e.g. a custom path for nix/mise/asdf installs).
 
 ## Usage
 
