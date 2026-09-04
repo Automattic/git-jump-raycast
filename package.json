@@ -64,6 +64,14 @@
       "title": "Enterprise HTTPS Proxy",
       "description": "Optional HTTPS_PROXY used when fetching from the Enterprise host",
       "default": "socks5://127.0.0.1:8080"
+    },
+    {
+      "name": "ghPath",
+      "type": "textfield",
+      "required": false,
+      "title": "gh CLI Path",
+      "description": "Optional override for the gh binary path. Standard Homebrew locations (/opt/homebrew/bin/gh, /usr/local/bin/gh) are detected automatically, so most users can leave this as-is. Only set it if your gh lives somewhere unusual (e.g. a nix/mise/asdf install).",
+      "default": "/opt/homebrew/bin/gh"
     }
   ],
   "dependencies": {

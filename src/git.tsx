@@ -11,6 +11,8 @@ import {
 } from "@raycast/api";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { statSync, accessSync, constants } from "fs";
+import { homedir } from "os";
 import { useEffect, useState } from "react";
 
 const execAsync = promisify(exec);
@@ -31,6 +33,7 @@ interface OrgRepos {
 }
 
 interface Preferences {
+  ghPath: string;
   githubOrgs: string;
   githubUsers: string;
   enterpriseOrgs: string;
@@ -59,12 +62,44 @@ function stripWoo(name: string): string {
     .replace(/-woocommerce$/i, "");
   return stripped || name;
 }
-const GH = "gh";
 const EXEC_ENV = process.env;
 const USER_SHELL = process.env.SHELL || "/bin/zsh";
 
 function shellQuote(arg: string): string {
   return `'${arg.replace(/'/g, `'\\''`)}'`;
+}
+
+function expandHome(p: string): string {
+  if (p === "~") return homedir();
+  if (p.startsWith("~/")) return homedir() + p.slice(1);
+  return p;
+}
+
+// True only for a real, executable file — so we don't select a directory or a non-executable
+// file as `gh` and then fail the invocation when a later candidate (or PATH) would have worked.
+function isExecutableFile(p: string): boolean {
+  try {
+    if (!statSync(p).isFile()) return false;
+    accessSync(p, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Resolves the gh binary to the first candidate that exists on disk: the configured path first
+// (user override), then the standard Homebrew locations. We can't rely on `gh` being on the
+// (non-interactive) shell PATH — that's the whole reason this exists — so we probe the filesystem.
+// This keeps a wrong or stale `ghPath` preference from stranding the user.
+function getGhPath(): string {
+  const configured = getPreferenceValues<Preferences>().ghPath || "";
+  const fallbacks = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"];
+  const candidates = [
+    ...new Set([configured, ...fallbacks].map((p) => p.trim()).filter(Boolean).map(expandHome)),
+  ];
+  // Bare "gh" as the last resort so the login shell can still resolve it from PATH rather than
+  // us running a path we already know isn't a usable binary.
+  return candidates.find(isExecutableFile) ?? "gh";
 }
 
 function parseOrgs(value: string): string[] {
@@ -93,7 +128,8 @@ async function fetchOrg(
     if (httpsProxy) envAssignments.push(`HTTPS_PROXY=${shellQuote(httpsProxy)}`);
   }
   const prefix = envAssignments.length > 0 ? `${envAssignments.join(" ")} ` : "";
-  const inner = `${prefix}${GH} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
+  const ghPath = getGhPath();
+  const inner = `${prefix}${shellQuote(ghPath)} repo list ${shellQuote(org)} --limit 1000 --json name,url,description,isArchived,visibility`;
   const command = `${USER_SHELL} -lc ${shellQuote(inner)}`;
   try {
     console.log(`[git-jump] Fetching ${org}${hostname ? ` on ${hostname}` : ""}...`);
